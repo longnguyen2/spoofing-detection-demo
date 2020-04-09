@@ -27,7 +27,7 @@ public class Detnet59 {
 
     public void loadModule() {
         try {
-            module = Module.load(assetFilePath(context, "Mydetnet59.pt"));
+            module = Module.load(assetFilePath(context, "detnet59.pt"));
         } catch (IOException e) {
             e.printStackTrace();
         }

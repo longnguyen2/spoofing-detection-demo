@@ -78,14 +78,14 @@ public class FaceDetection {
                 }
             }
         };
-        mGray = new Mat();
-        mRgba = new Mat();
     }
 
     public void init() {
         if (!OpenCVLoader.initDebug()) {
             Log.d(TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
             OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION, context, mLoaderCallback);
+            mGray = new Mat();
+            mRgba = new Mat();
         } else {
             Log.d(TAG, "OpenCV library found inside package. Using it!");
             mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
