@@ -2,6 +2,7 @@ package org.pytorch.helloworld;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import org.opencv.android.Utils;
@@ -36,22 +37,30 @@ public class Detnet59 {
     public double detect(Mat rgb) {
         Bitmap bmp = Bitmap.createBitmap(rgb.cols(), rgb.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(rgb, bmp);
-        Tensor data = TensorImageUtils.bitmapToFloat32Tensor(bmp, TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_STD_RGB);
-        Tensor output = module.forward(IValue.from(data)).toTensor();
-        return getValue(output.getDataAsDoubleArray())[0];
+        return detect(bmp);
     }
 
-    public double[] getValue(double[] params) {
-        double sum = 0;
+    public double detect(Bitmap bmp) {
+        Tensor data = TensorImageUtils.bitmapToFloat32Tensor(bmp, new float[]{0f, 0f, 0f}, new float[]{1f/255.0f, 1f/255.0f, 1f/255.0f});
+        Tensor output = module.forward(IValue.from(data)).toTensor();
+        float[] outputs = output.getDataAsFloatArray();
+//        Log.d("Detection", outputs[0] + " " + outputs[1]);
+        float[] values = getValue(outputs);
+//        Log.d("Detection", values[0] + " " + values[1]);
+        return values[1];
+    }
+
+    public float[] getValue(float[] params) {
+        float sum = 0;
 
         for (int i=0; i<params.length; i++) {
-            params[i] = Math.exp(params[i]);
+            params[i] = (float) Math.exp(params[i]);
             sum += params[i];
         }
 
         if (Double.isNaN(sum) || sum < 0) {
             for (int i=0; i<params.length; i++) {
-                params[i] = 1.0 / params.length;
+                params[i] = 1.0f / params.length;
             }
         } else {
             for (int i=0; i<params.length; i++) {

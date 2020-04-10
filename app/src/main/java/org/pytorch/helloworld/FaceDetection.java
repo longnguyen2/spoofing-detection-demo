@@ -10,6 +10,7 @@ import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Rect;
+import org.opencv.core.Size;
 import org.opencv.objdetect.CascadeClassifier;
 
 import java.io.File;
@@ -24,11 +25,10 @@ public class FaceDetection {
     private Mat mGray;
     private File mCascadeFile;
     private CascadeClassifier mJavaDetector;
-    private DetectionBasedTracker mNativeDetector;
 
     private Context context;
     private BaseLoaderCallback mLoaderCallback;
-    public FaceDetection(Context _context) {
+    public FaceDetection(Context _context, final CameraBridgeViewBase camera) {
         this.context = _context;
         mLoaderCallback = new BaseLoaderCallback(context) {
             @Override
@@ -38,13 +38,12 @@ public class FaceDetection {
                         Log.i(TAG, "OpenCV loaded successfully");
 
                         // Load native library after(!) OpenCV initialization
-                        System.loadLibrary("detection_based_tracker");
 
                         try {
                             // load cascade file from application resources
-                            InputStream is = context.getResources().openRawResource(R.raw.lbpcascade_frontalface);
+                            InputStream is = context.getResources().openRawResource(R.raw.haarcascade_frontalface);
                             File cascadeDir = context.getDir("cascade", Context.MODE_PRIVATE);
-                            mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+                            mCascadeFile = new File(cascadeDir, "haarcascade_frontalface.xml");
                             FileOutputStream os = new FileOutputStream(mCascadeFile);
 
                             byte[] buffer = new byte[4096];
@@ -56,15 +55,6 @@ public class FaceDetection {
                             os.close();
 
                             mJavaDetector = new CascadeClassifier(mCascadeFile.getAbsolutePath());
-                            if (mJavaDetector.empty()) {
-                                Log.e(TAG, "Failed to load cascade classifier");
-                                mJavaDetector = null;
-                            } else {
-                                Log.i(TAG, "Loaded cascade classifier from " + mCascadeFile.getAbsolutePath());
-                            }
-
-                            mNativeDetector = new DetectionBasedTracker(mCascadeFile.getAbsolutePath(), 0);
-                            mNativeDetector.setMinFaceSize(Constants.minFaceSize);
 
                             cascadeDir.delete();
 
@@ -72,6 +62,7 @@ public class FaceDetection {
                             e.printStackTrace();
                             Log.e(TAG, "Failed to load cascade. Exception thrown: " + e);
                         }
+                        camera.enableView();
                         break;
                     default:
                         super.onManagerConnected(status);
@@ -97,14 +88,25 @@ public class FaceDetection {
         if (mRgba != null) mRgba.release();
     }
 
-    public Rect[] detect(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
-        mRgba = inputFrame.rgba();
-        mGray = inputFrame.gray();
-
+    public Rect detect(Mat mGray) {
         MatOfRect faces = new MatOfRect();
 
-        mNativeDetector.detect(mGray, faces);
+        mJavaDetector.detectMultiScale(mGray, faces, 1.1, 4, 2, new Size(Constants.minFaceSize, Constants.minFaceSize), new Size());
 
-        return faces.toArray();
+        if (faces.toArray().length == 0) return null;
+        Rect face = faces.toArray()[0];
+        face = scale(face, Constants.scale, mGray.width(), mGray.height());
+        return face;
+    }
+
+    private Rect scale(Rect rect, float factor, int width, int height) {
+        int centerX = rect.x + (rect.width / 2);
+        int centerY = rect.y + (rect.height / 2);
+        rect.x = centerX - ((int) (rect.width * factor) / 2);
+        rect.y = centerY - ((int) ((rect.height * factor) / 2));
+        rect.height = (int) (rect.height * factor);
+        rect.width = (int) (rect.width * factor);
+        if (rect.x < 0 || rect.y < 0 || rect.width > width || rect.height > height) return null;
+        else return rect;
     }
 }

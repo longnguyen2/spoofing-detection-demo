@@ -28,49 +28,59 @@ public class MainActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
 
+//    Bitmap bitmap = null;
+//    Module module = null;
+//    try {
+//      // creating bitmap from packaged into app android asset 'image.jpg',
+//      // app/src/main/assets/image.jpg
+//      bitmap = BitmapFactory.decodeStream(getAssets().open("image.jpg"));
+//      // loading serialized torchscript module from packaged into app android asset model.pt,
+//      // app/src/model/assets/model.pt
+//      module = Module.load(assetFilePath(this, "model.pt"));
+//    } catch (IOException e) {
+//      Log.e("PytorchHelloWorld", "Error reading assets", e);
+//      finish();
+//    }
+//
+//    // showing image on UI
+//    ImageView imageView = findViewById(R.id.image);
+//    imageView.setImageBitmap(bitmap);
+//
+//    // preparing input tensor
+//    final Tensor inputTensor = TensorImageUtils.bitmapToFloat32Tensor(bitmap,
+//        TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_STD_RGB);
+//
+//    // running the model
+//    final Tensor outputTensor = module.forward(IValue.from(inputTensor)).toTensor();
+//
+//    // getting tensor content as java array of floats
+//    final float[] scores = outputTensor.getDataAsFloatArray();
+//
+//    // searching for the index with maximum score
+//    float maxScore = -Float.MAX_VALUE;
+//    int maxScoreIdx = -1;
+//    for (int i = 0; i < scores.length; i++) {
+//      if (scores[i] > maxScore) {
+//        maxScore = scores[i];
+//        maxScoreIdx = i;
+//      }
+//    }
+//
+//    String className = ImageNetClasses.IMAGENET_CLASSES[maxScoreIdx];
+//
+//    // showing className on UI
+//    TextView textView = findViewById(R.id.text);
+//    textView.setText(className);
+
+    Detnet59 detnet59 = new Detnet59(this);
     Bitmap bitmap = null;
-    Module module = null;
     try {
-      // creating bitmap from packaged into app android asset 'image.jpg',
-      // app/src/main/assets/image.jpg
-      bitmap = BitmapFactory.decodeStream(getAssets().open("image.jpg"));
-      // loading serialized torchscript module from packaged into app android asset model.pt,
-      // app/src/model/assets/model.pt
-      module = Module.load(assetFilePath(this, "model.pt"));
+      bitmap = BitmapFactory.decodeStream(getAssets().open("sample_face.png"));
     } catch (IOException e) {
-      Log.e("PytorchHelloWorld", "Error reading assets", e);
-      finish();
+      e.printStackTrace();
     }
-
-    // showing image on UI
-    ImageView imageView = findViewById(R.id.image);
-    imageView.setImageBitmap(bitmap);
-
-    // preparing input tensor
-    final Tensor inputTensor = TensorImageUtils.bitmapToFloat32Tensor(bitmap,
-        TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_STD_RGB);
-
-    // running the model
-    final Tensor outputTensor = module.forward(IValue.from(inputTensor)).toTensor();
-
-    // getting tensor content as java array of floats
-    final float[] scores = outputTensor.getDataAsFloatArray();
-
-    // searching for the index with maximum score
-    float maxScore = -Float.MAX_VALUE;
-    int maxScoreIdx = -1;
-    for (int i = 0; i < scores.length; i++) {
-      if (scores[i] > maxScore) {
-        maxScore = scores[i];
-        maxScoreIdx = i;
-      }
-    }
-
-    String className = ImageNetClasses.IMAGENET_CLASSES[maxScoreIdx];
-
-    // showing className on UI
-    TextView textView = findViewById(R.id.text);
-    textView.setText(className);
+    detnet59.loadModule();
+    detnet59.detect(bitmap);
   }
 
   /**
